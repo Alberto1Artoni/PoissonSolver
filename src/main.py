@@ -1,13 +1,30 @@
-# read input
+from mesh    import Mesh
+from problem import Problem
+import json
 
-# generate mesh
+def main():
+    # read input
+    filePath = "data.json"
+    with open(filePath, 'r') as file:
+        data = json.load(file)
 
-# assemble matrices
+    # generate mesh
+    mesh = Mesh(data)
 
-# assemble right-hand side
+    print("Dumping mesh coordinates...")
+    print(mesh.coord_x)
 
-# solve linear system
+    print("Dumping mesh connectivity...")
+    print(mesh.elements)
 
-# post-process
+    # assemble matrices
+    problem = Problem(mesh)
 
+    # assemble right-hand side
 
+    # solve linear system
+
+    # post-process
+
+if __name__ == "__main__":
+    main()
