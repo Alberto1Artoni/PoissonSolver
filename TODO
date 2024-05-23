@@ -1,0 +1,10 @@
+0. Add method to compute L2 norm
+2. VTK visualization?
+3. Implement lifting: this should help with CG? @@@ EXTRA POINTS!
+4. Review how the linear problem is solved.
+5. Add mesh refinement
+    - add mesh visualizer
+    - think to the algorithm: compare with the presentation
+  
+
+Final: improve comments
