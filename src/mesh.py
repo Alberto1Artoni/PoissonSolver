@@ -42,7 +42,7 @@ class Mesh:
                                         np.arange(self.nx, self.nx*(self.ny-2) , self.nx)
         """
         # hard coding for the moment
-        self.boundary_dofs = np.zeros(4 * (self.nx + self.ny - 2), dtype=int)
+        self.boundary_dofs = np.zeros(2 * (self.nx + self.ny - 2), dtype=int)
         k = 0;
         for i in range(self.nx*self.ny):
             if self.coord_x[i] == 0 or self.coord_x[i] == 1 or \

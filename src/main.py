@@ -18,12 +18,6 @@ def main():
     # generate mesh
     mesh = Mesh(data)
 
-    print("Dumping mesh coordinates...")
-    print(mesh.coord_x)
-
-    print("Dumping mesh connectivity...")
-    print(mesh.elements)
-
     # parse source term
     # this needs to be checked, could be slow
     function_str = data['source']
@@ -37,7 +31,6 @@ def main():
 
     # solve linear system
     uh = problem.solve()
-    print(uh)
 
     # post-process
     x = np.linspace(0, 1, data['nx'])
