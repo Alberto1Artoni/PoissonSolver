@@ -15,6 +15,8 @@ class Mesh:
             """     b. generates the elements """
             self.generate_structured_elements(data)
 
+            self.generate_boundary_nodes()
+
 
     def generate_nodes(self, data):
         self.nx = data['nx']        
@@ -23,6 +25,28 @@ class Mesh:
         """ generate the coordinates """
         self.coord_x =   np.tile(np.linspace(0, 1, self.nx), self.ny)
         self.coord_y = np.repeat(np.linspace(0, 1, self.ny), self.nx)
+
+    def generate_boundary_nodes(self):
+        """ generates the boundary nodes """
+        # returns a vector collecting the boundary nodes
+        """
+        self.boundary_dofs = np.zeros(4 * (self.nx + self.ny - 2), dtype=int)
+        self.boundary_dofs[0:self.nx] = np.arange(0, self.nx)
+        self.boundary_dofs[self.nx : self.nx + self.ny - 1] = \
+                                        np.arange(self.nx, self.nx*(self.ny-2) , self.nx)
+        self.boundary_dofs[self.nx +   self.ny - 1: 
+                           self.nx + 2*self.ny - 1] = \
+                                        np.arange(self.nx, self.nx*(self.ny-2) , self.nx)
+        """
+        # hard coding for the moment
+        self.boundary_dofs = np.zeros(4 * (self.nx + self.ny - 2), dtype=int)
+        k = 0;
+        for i in range(self.nx*self.ny):
+            if self.coord_x[i] == 0 or self.coord_x[i] == 1 or \
+               self.coord_y[i] == 0 or self.coord_y[i] == 1:
+                self.boundary_dofs[k] = i
+                k += 1
+
 
     def generate_structured_elements(self, data):
         """ generates element local connectivity """
