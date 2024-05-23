@@ -7,24 +7,27 @@ class Mesh:
             self.load(path)
         else:
             """ Generates a structured triangular mesh """
+            self.nx = data['nx']    # nodes in the x direction
+            self.ny = data['ny']    # nodes in the y direction
 
-            """ 1. generates the grid on the unit square """
+            self.a = data['a']      # left x 
+            self.b = data['b']      # right x
+            self.c = data['c']      # bottom y
+            self.d = data['d']      # top y
+
             """     a. generates the nodes """
-            self.generate_nodes(data)
+            self.generate_nodes()
 
             """     b. generates the elements """
-            self.generate_structured_elements(data)
+            self.generate_structured_elements()
 
+            """     c. generates the boundary nodes """
             self.generate_boundary_nodes()
 
 
-    def generate_nodes(self, data):
-        self.nx = data['nx']        
-        self.ny = data['ny']
-
-        """ generate the coordinates """
-        self.coord_x =   np.tile(np.linspace(0, 1, self.nx), self.ny)
-        self.coord_y = np.repeat(np.linspace(0, 1, self.ny), self.nx)
+    def generate_nodes(self):
+        self.coord_x =   np.tile(np.linspace(self.a, self.b, self.nx), self.ny)
+        self.coord_y = np.repeat(np.linspace(self.c, self.d, self.ny), self.nx)
 
     def generate_boundary_nodes(self):
         """ generates the boundary nodes """
@@ -48,7 +51,7 @@ class Mesh:
                 k += 1
 
 
-    def generate_structured_elements(self, data):
+    def generate_structured_elements(self):
         """ generates element local connectivity """
         # number of elements given a structured triangular mesh
         self.ne = 2 * (self.nx - 1) * (self.ny - 1)
@@ -69,13 +72,13 @@ class Mesh:
     def compute_jacobian(self, ie):
         # compute the Jacobian
         jac = np.zeros((2, 2))
-        jac[:, 0] = self.coord_x[self.elements[ie, 1:]] - \
-                      self.coord_x[self.elements[ie,   0]]
-        jac[:, 1] = self.coord_y[self.elements[ie, 1:]] - \
-                      self.coord_y[self.elements[ie,   0]]
+        jac[:, 0] = self.coord_x[self.elements[ie,  1:]] - \
+                    self.coord_x[self.elements[ie,   0]]
+        jac[:, 1] = self.coord_y[self.elements[ie,  1:]] - \
+                    self.coord_y[self.elements[ie,   0]]
 
-        # @TODO implement the explicit formula for the inverse of a 2x2 matrix
-        invJac = np.linalg.inv(jac)
+        det    = jac[0, 0] * jac[1, 1] - jac[0, 1] * jac[1, 0]
+        invJac = (1 / det) * np.array([[jac[1,1], -jac[0,1]], [-jac[1,0], jac[0,0] ]])
         return jac, invJac
 
 
