@@ -11,6 +11,8 @@ class Problem:
 
     def __init__(self, mesh, data):
         """ Constructor """
+        self.ndof = mesh.nx * mesh.ny
+
         # assemble stiffness
         self.K  = self.stiff(mesh)
 
@@ -20,8 +22,8 @@ class Problem:
 
         # enforce Dirichlet boundary conditions
         g = parseFunction(data['exact'])
-        self.dirichlet(mesh, g)
-        # self.lifting(mesh, g)
+        #self.dirichlet(mesh, g)
+        self.lifting(mesh, g)
 
     
     def localStiff(self, mesh, ie):
@@ -39,44 +41,44 @@ class Problem:
         [jac, invJac] = mesh.compute_jacobian(ie)
         area = np.linalg.det(jac) / 2.0  # area of the element
 
+        # @TODO this needs to be vectorized
         for i in range(3):
             for j in range(3):
                 localStiff[i,j] =  gradLambda[:,i].T @ invJac \
                                                      @ invJac.T @ gradLambda[:,j] * area
+
 
         return localStiff
 
     def stiff(self, mesh):
         """ assemble global stiffness matrix """
 
-        ndof = mesh.nx * mesh.ny        # true only for P1 elements
 
         # initialize sparse matrix in coo format
-        coo_i = np.zeros( mesh.ne * 9 )
-        coo_j = np.zeros( mesh.ne * 9 )
-        val   = np.zeros( mesh.ne * 9 )
+        coo_i = np.zeros( mesh.ne * 9 , dtype=int)
+        coo_j = np.zeros( mesh.ne * 9 , dtype=int)
+        val   = np.zeros( mesh.ne * 9 , dtype=float)
 
         # iterator to fill the sparse matrix
-        k = 0
+        k = np.arange(0, 9)
 
         # loop over elements, assemble global stiffness
         for ie in range(mesh.ne):
             localStiff = self.localStiff(mesh, ie)
-            for i in range(3):
-                for j in range(3):
-                    coo_i[k] = mesh.elements[ie, i]
-                    coo_j[k] = mesh.elements[ie, j]
-                    val[k]   = localStiff[i, j]
-                    k += 1
+            ii = np.repeat(np.arange(3), 3)
+            jj = np.tile(np.arange(3), 3)
+            coo_i[k] = mesh.elements[ie, ii]
+            coo_j[k] = mesh.elements[ie, jj]
+            val[k]   = localStiff.flatten()
+            k += 9
 
         # return the stiff matrix
-        K = sp.coo_matrix((val, (coo_i, coo_j)), shape=(ndof, ndof)) 
+        K = sp.coo_matrix((val, (coo_i, coo_j)), shape=(self.ndof, self.ndof)) 
         return K
 
     def source(self, mesh, f):
         # loop over elements, assemble global source
-        ndof = mesh.nx * mesh.ny
-        fh = np.zeros(ndof)
+        fh = np.zeros(self.ndof)
 
         for ie in range(mesh.ne):
             [jac, invJac] = mesh.compute_jacobian(ie)
@@ -99,17 +101,13 @@ class Problem:
         row  = self.K.row
         col  = self.K.col
 
-        ndof = mesh.nx * mesh.ny
 
         # enforce Dirichlet boundary conditions on nodes
-        for k in range(data.size):
-            # employ which
-            if ( row[k] in  mesh.boundary_dofs):
-                if col[k] == row[k]:
-                    data[k] = 1.0
-                else:
-                    data[k] = 0.0
-        self.K = sp.coo_matrix((data, (row, col)), shape=(ndof, ndof))
+        mask = np.isin(row, mesh.boundary_dofs)
+        indices = np.where(mask)
+        data[indices] = np.where(col[indices] == row[indices], 1.0, 0.0)
+
+        self.K = sp.coo_matrix((data, (row, col)), shape=(self.ndof, self.ndof))
 
         # convert to csr format for faster algebra
         self.K = self.K.tocsr()
@@ -122,9 +120,9 @@ class Problem:
 
     def lifting(self, mesh, g):
         # non homogeneous Dirichlet boundary conditions
-        # with lifting
 
-        ndof = mesh.nx * mesh.ny
+        # with lifting
+        self.ug = np.zeros(self.ndof)
         self.ug[mesh.boundary_dofs] = g(mesh.coord_x[mesh.boundary_dofs], mesh.coord_y[mesh.boundary_dofs])
         
         # lift the source
@@ -136,15 +134,15 @@ class Problem:
         row  = self.K.row
         col  = self.K.col
 
-        # enforce Dirichlet boundary conditions on nodes
-        for k in range(data.size):
-            if ( (row[k] in  mesh.boundary_dofs) or (col[k] in mesh.boundary_dofs) ):
-                if col[k] == row[k]:
-                    data[k] = 1.0
-                else:
-                    data[k] = 0.0
 
-        self.K = sp.coo_matrix((data, (row, col)), shape=(ndof, ndof))
+        # enforce Dirichlet boundary conditions on nodes
+        mask_row = np.isin(row, mesh.boundary_dofs)
+        mask_col = np.isin(col, mesh.boundary_dofs)
+        mask = mask_row | mask_col
+        indices = np.where(mask)
+        data[indices] = np.where(col[indices] == row[indices], 1.0, 0.0)
+
+        self.K = sp.coo_matrix((data, (row, col)), shape=(self.ndof, self.ndof))
 
         # convert to csr format for faster algebra
         self.K = self.K.tocsr()

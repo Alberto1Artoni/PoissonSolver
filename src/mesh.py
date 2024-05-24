@@ -28,25 +28,12 @@ class Mesh:
 
     def generate_boundary_nodes(self):
         """ generates the boundary nodes """
-        # returns a vector collecting the boundary nodes
-        # @TODO fix this
 
-#       self.boundary_dofs = np.zeros(4 * (self.nx + self.ny - 2), dtype=int)
-#       self.boundary_dofs[0:self.nx] = np.arange(0, self.nx)
-#       self.boundary_dofs[self.nx : self.nx + self.ny - 1] = \
-#                                       np.arange(self.nx, self.nx*(self.ny-2) , self.nx)
-#       self.boundary_dofs[self.nx +   self.ny - 1: 
-#                          self.nx + 2*self.ny - 1] = \
-#                                       np.arange(self.nx, self.nx*(self.ny-2) , self.nx)
-
-        # hard coding for the moment
-        self.boundary_dofs = np.zeros(2 * (self.nx + self.ny - 2), dtype=int)
-        k = 0;
-        for i in range(self.nx*self.ny):
-            if self.coord_x[i] == self.a or self.coord_x[i] == self.b or \
-               self.coord_y[i] == self.c or self.coord_y[i] == self.d:
-                self.boundary_dofs[k] = i
-                k += 1
+        self.boundary_dofs = np.concatenate((\
+                                 np.arange(0, self.nx),                             \
+                                 np.arange(self.nx, self.nx*(self.ny-1) , self.nx), \
+                                 np.arange(2*self.nx-1, self.nx*(self.ny-1) , self.nx), \
+                                 np.arange(self.nx*(self.ny-1), self.nx*self.ny)))
 
 
     def generate_structured_elements(self):
@@ -61,6 +48,8 @@ class Mesh:
         lower = np.array([1, self.nx + 1, 0]);
         upper = np.array([self.nx, 0, self.nx+1]);        
         
+
+        # @TODO this can be vectorized
         for j in range(0, self.ny - 1):
             for i in range(0, self.nx - 1):
                 k = 2 * (j * (self.nx - 1) + i)
