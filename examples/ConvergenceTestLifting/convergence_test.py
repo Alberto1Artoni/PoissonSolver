@@ -43,7 +43,7 @@ def main():
         problem = Problem(mesh, data)
 
         # solve linear system
-        uh = problem.solve()
+        uh = problem.solveLifting()
         hList.append(mesh.h());
         normL2 = l2Norm(mesh, uh);
         normL2list.append(normL2);
