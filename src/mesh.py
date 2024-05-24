@@ -45,8 +45,8 @@ class Mesh:
         self.boundary_dofs = np.zeros(2 * (self.nx + self.ny - 2), dtype=int)
         k = 0;
         for i in range(self.nx*self.ny):
-            if self.coord_x[i] == 0 or self.coord_x[i] == 1 or \
-               self.coord_y[i] == 0 or self.coord_y[i] == 1:
+            if self.coord_x[i] == self.a or self.coord_x[i] == self.b or \
+               self.coord_y[i] == self.c or self.coord_y[i] == self.d:
                 self.boundary_dofs[k] = i
                 k += 1
 
