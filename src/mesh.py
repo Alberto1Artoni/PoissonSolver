@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 class Mesh:
     def __init__(self, data, path = None):
@@ -56,16 +57,16 @@ class Mesh:
         # number of elements given a structured triangular mesh
         self.ne = 2 * (self.nx - 1) * (self.ny - 1)
 
-        #Odd elements are lower triangles, while even elements are upper triangles
+        # odd elements are lower triangles, while even elements are upper triangles
         self.elements = np.zeros( (self.ne, 3), dtype=int)
 
         # store element connectivity in counter-clockwise order
-        lower = np.array([0, 1, self.nx]);
-        upper = np.array([self.nx + 1, self.nx, 1]);        
+        lower = np.array([0, 1, self.nx + 1]);
+        upper = np.array([self.nx + 1, self.nx, 0]);        
         
         for i in range(0, self.nx - 1):
             for j in range(0, self.ny - 1):
-                k = 2 * (i * (self.ny - 1) + j)
+                k = 2 * (j * (self.nx - 1) + i)
                 self.elements[k, :]     = lower + i + j * self.nx
                 self.elements[k + 1, :] = upper + i + j * self.nx
 
@@ -81,9 +82,82 @@ class Mesh:
         invJac = (1 / det) * np.array([[jac[1,1], -jac[0,1]], [-jac[1,0], jac[0,0] ]])
         return jac, invJac
 
+    def refine(self):
+        """ Refine the mesh """
+        # Midpoint edge refinement
 
-    def h(self):
-        # for the moment keep it simple
-        return 1.0 / self.nx
+        # A general implementation requires a better implementation 
+        # of the mesh data structure.
+        # This probably should be called inside the constructor,
+        # but since this is a poc I will leave it here.
+
+        #   1. Connectivity of the mesh
+        # compute vertex connectivity for faster computations
+        own = [[] for _ in range(self.nx * self.ny)]
+        for ie in range(self.ne):
+            for iv in range(3):
+                own[self.elements[ie,iv]].append(ie)
+
+        #   2. Compute neighobours
+        #  set to -1 boundary neig
+        neig = -np.ones([self.ne,3], dtype=int)
+        for ie in range(self.ne):
+            ineig = 0
+            for iv in range(3):
+                i = self.elements[ie,iv]
+                j = self.elements[ie,(iv+1)%3]
+                for je in own[i]:
+                    if je != ie:
+                        for jv in range(3):
+                            if self.elements[je,jv] == j:
+                                neig[ie,ineig] = je
+                                ineig += 1
+        
+        isRefined = np.zeros(self.ne)
+
+        #   3. Refine
+        new_nodes = [];     # empty list collecting the owners of the new nodes
+        new_coords = [];    # empty list collecting the coordinates of the new nodes
+        for ie in range(self.ne):
+            for iv in range(3):
+                if (neig[ie,iv] == -1): # check if it is a boundary edge
+                    # refine
+                    print("Refining element ", ie)
+                    new_nodes.append([ie, -1])
+                else:
+                    if (isRefined[neig[ie,iv]] == 1):
+                        # do nothing
+                        print("do nothing")
+                    else:
+                        i = self.elements[ie,  iv]
+                        j = self.elements[ie, (iv+1)%3]
+                        new_nodes.append([ie, neig[ie,iv]])
+                        x = 0.5 * (self.coord_x[i] + self.coord_x[j])
+                        y = 0.5 * (self.coord_y[i] + self.coord_y[j])
+                        new_coords.append([x, y])
+
+            isRefined[ie] = 1
+
+        print(new_nodes)
+        print(isRefined)
+
+        
+
+    def plot(self):
+        """ Utility to plot the mesh """
+        plt.figure()
+        for ie in range(self.ne):
+            x = np.zeros(4)
+            y = np.zeros(4)
+            for i in range(3):
+                x[i] = self.coord_x[self.elements[ie, i]]
+                y[i] = self.coord_y[self.elements[ie, i]]
+            x[3] = x[0]
+            y[3] = y[0]
+            plt.plot(x, y, 'b')
+        plt.show()
+
+
+
 
 

@@ -1,5 +1,7 @@
 from .mesh import Mesh
 import numpy as np
+from sympy import symbols, sin, cos, pi
+from sympy.utilities.lambdify import lambdify
 
 def l2Norm(mesh, uh):
 
@@ -49,3 +51,13 @@ def get_quad():
     y = np.array([1.0/2, 0.0, 1.0/2]);
 
     return w, x, y
+
+
+def parseFunction(fun_str ):
+    """ helper function to parse a string and return a function """
+    x = symbols('x')
+    y = symbols('y')
+    h_expr = eval(fun_str, {"sin": sin, "cos": cos, "pi": pi, "x": x, "y": y})
+    h = lambdify((x, y), h_expr, 'numpy')
+
+    return h

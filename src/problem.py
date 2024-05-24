@@ -1,21 +1,30 @@
 from .mesh import Mesh
+from .utils import parseFunction
 import numpy as np
 import scipy.sparse as sp
 from scipy.sparse.linalg import spsolve
+from sympy import symbols, sin, cos, pi
+from sympy.utilities.lambdify import lambdify
 
 class Problem:
     """ class defining the Poisson problem """
 
-    def __init__(self, mesh, f):
+    def __init__(self, mesh, data):
         """ Constructor """
         # assemble stiffness
         self.K  = self.stiff(mesh)
 
         # assemble source
+        f = parseFunction(data['source'])
         self.fh = self.source(mesh, f)
 
         # enforce Dirichlet boundary conditions
-        self.dirichlet(mesh)
+        g = parseFunction(data['exact'])
+
+        if data['type'] == 'strong':
+            self.dirichlet(mesh, g)
+        else:
+            self.lifting(mesh, g)
 
     
     def localStiff(self, mesh, ie):
@@ -84,13 +93,12 @@ class Problem:
         return fh
 
 
-    def dirichlet(self, mesh):
+    def dirichlet(self, mesh, g):
         """ enforce Dirichlet boundary conditions """
 
-        # @TODO implement lifting
         # enforce Dirichlet boundary conditions on nodes
         for i in mesh.boundary_dofs:
-            self.fh[i] = 0
+            self.fh[i] = g(mesh.coord_x[i], mesh.coord_y[i])
         
         # get COO data format
         data = self.K.data
@@ -115,4 +123,47 @@ class Problem:
         # solve the problem
         uh = spsolve(self.K, self.fh)
         return uh
+
+
+    def lifting(self, mesh, g):
+        # non homogeneous Dirichlet boundary conditions
+        # with lifting
+
+        ndof = mesh.nx * mesh.ny
+        self.ug = np.zeros(ndof)
+
+        for i in mesh.boundary_dofs:
+            self.ug[i] = g(mesh.coord_x[i], mesh.coord_y[i])
+        
+        # lift the source
+        self.fg = self.fh - self.K * self.ug
+
+        # modify the entries of the stiffness matrix
+        # get COO data format
+        data = self.K.data
+        row  = self.K.row
+        col  = self.K.col
+
+        # enforce Dirichlet boundary conditions on nodes
+        for k in range(data.size):
+            if ( (row[k] in  mesh.boundary_dofs) or (col[k] in mesh.boundary_dofs) ):
+                if col[k] == row[k]:
+                    data[k] = 1.0
+                else:
+                    data[k] = 0.0
+
+        self.K = sp.coo_matrix((data, (row, col)), shape=(ndof, ndof))
+
+        # convert to csr format for faster algebra
+        self.K = self.K.tocsr()
+        
+        for i in mesh.boundary_dofs:
+            self.fg[i] = 0
+
+       
+    def solveLifting(self):
+        uh = spsolve(self.K, self.fg)   # solve the homogeneous problem
+        uh = uh + self.ug               # lift the solution
+        return uh
+
 
