@@ -28,7 +28,8 @@ def main():
     f_expr = eval(function_str, {"sin": sin, "cos": cos, "pi": pi, "x": x, "y": y})
     f = lambdify((x, y), f_expr, 'numpy')
 
-
+    hList = [];
+    normL2list = [];
     refs = [11,21,41,81];
     for ref in refs:
 
@@ -39,13 +40,24 @@ def main():
         mesh = Mesh(data)
 
         # assemble problem
-        problem = Problem(mesh, f)
+        problem = Problem(mesh, data)
 
         # solve linear system
         uh = problem.solve()
+        hList.append(mesh.h());
         normL2 = l2Norm(mesh, uh);
+        normL2list.append(normL2);
         print("L2 norm: ", normL2)
 
+    # plot convergence
+    plt.figure()
+    plt.loglog(hList, normL2list, '-o')
+    plt.loglog(hList, np.array(hList)**2, 'k-.')
+    plt.xlabel('h')
+    plt.ylabel('L2 norm')
+    plt.title('Convergence test')
+    plt.legend(['L2 norm', 'h^2'])
+    plt.show()
 
 if __name__ == "__main__":
     main()

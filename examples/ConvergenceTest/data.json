@@ -1,0 +1,10 @@
+{
+  "nx": 161,
+  "ny": 161,
+  "a" : 0.0,
+  "b" : 1.0,
+  "c" : 0.0,
+  "d" : 1.0,
+  "source": "8*pi*pi*sin(2*pi*x)*sin(2*pi*y)",
+  "exact": "sin(2*pi*x)*sin(2*pi*y)"
+}

@@ -20,11 +20,8 @@ class Problem:
 
         # enforce Dirichlet boundary conditions
         g = parseFunction(data['exact'])
-
-        if data['type'] == 'strong':
-            self.dirichlet(mesh, g)
-        else:
-            self.lifting(mesh, g)
+        self.dirichlet(mesh, g)
+        # self.lifting(mesh, g)
 
     
     def localStiff(self, mesh, ie):
@@ -40,12 +37,12 @@ class Problem:
 
         # get the jacobian
         [jac, invJac] = mesh.compute_jacobian(ie)
-        halfArea = np.linalg.det(jac) / 2.0  # area of the element
+        area = np.linalg.det(jac) / 2.0  # area of the element
 
         for i in range(3):
             for j in range(3):
                 localStiff[i,j] =  gradLambda[:,i].T @ invJac \
-                                                     @ invJac.T @ gradLambda[:,j] * halfArea
+                                                     @ invJac.T @ gradLambda[:,j] * area
 
         return localStiff
 
@@ -81,14 +78,12 @@ class Problem:
         ndof = mesh.nx * mesh.ny
         fh = np.zeros(ndof)
 
-        # @TODO improve this loop
-        # this is not efficient, but works
         for ie in range(mesh.ne):
             [jac, invJac] = mesh.compute_jacobian(ie)
-            det = np.linalg.det(jac)
+            area = np.linalg.det(jac) / 2.0
             bar_x = np.sum(mesh.coord_x[mesh.elements[ie,:]]) / 3.0
             bar_y = np.sum(mesh.coord_y[mesh.elements[ie,:]]) / 3.0
-            fh[mesh.elements[ie,:]] = f(bar_x, bar_y) * det * np.ones(3)
+            fh[mesh.elements[ie,:]] +=  f(bar_x, bar_y) * area * np.ones(3) / 3.0
 
         return fh
 
@@ -97,8 +92,7 @@ class Problem:
         """ enforce Dirichlet boundary conditions """
 
         # enforce Dirichlet boundary conditions on nodes
-        for i in mesh.boundary_dofs:
-            self.fh[i] = g(mesh.coord_x[i], mesh.coord_y[i])
+        self.fh[mesh.boundary_dofs] = g(mesh.coord_x[mesh.boundary_dofs], mesh.coord_y[mesh.boundary_dofs])
         
         # get COO data format
         data = self.K.data
@@ -109,6 +103,7 @@ class Problem:
 
         # enforce Dirichlet boundary conditions on nodes
         for k in range(data.size):
+            # employ which
             if ( row[k] in  mesh.boundary_dofs):
                 if col[k] == row[k]:
                     data[k] = 1.0
@@ -130,10 +125,7 @@ class Problem:
         # with lifting
 
         ndof = mesh.nx * mesh.ny
-        self.ug = np.zeros(ndof)
-
-        for i in mesh.boundary_dofs:
-            self.ug[i] = g(mesh.coord_x[i], mesh.coord_y[i])
+        self.ug[mesh.boundary_dofs] = g(mesh.coord_x[mesh.boundary_dofs], mesh.coord_y[mesh.boundary_dofs])
         
         # lift the source
         self.fg = self.fh - self.K * self.ug
@@ -157,8 +149,7 @@ class Problem:
         # convert to csr format for faster algebra
         self.K = self.K.tocsr()
         
-        for i in mesh.boundary_dofs:
-            self.fg[i] = 0
+        self.fg[mesh.boundary_dofs] = 0
 
        
     def solveLifting(self):

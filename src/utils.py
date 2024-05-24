@@ -16,12 +16,13 @@ def l2Norm(mesh, uh):
         x = np.zeros(3);
         y = np.zeros(3);
         for i in range(3):
-            vett  = np.array([xnod[i], ynod[i]]);
-            trans = np.array([mesh.coord_x[mesh.elements[ie,0]], mesh.coord_y[mesh.elements[ie,0]]]);
+            vett  = np.array([xnod[i], ynod[i]])[:,None];
+            trans = np.array([mesh.coord_x[mesh.elements[ie,0]], mesh.coord_y[mesh.elements[ie,0]]])[:, None];
             vphys = jac@vett + trans
             x[i] = vphys[0];
             y[i] = vphys[1];
         
+
         dofs = mesh.elements[ie,:]
 
         local_uh = np.zeros(3);
@@ -29,10 +30,11 @@ def l2Norm(mesh, uh):
         for i in range(3):
             local_uh[i] = local_uh[i] + np.dot(uh[dofs],shape[i,:]);
 
-        det = np.linalg.det(jac);
+        areaPhys = np.abs(np.linalg.det(jac)) / 2.0;
         # evaluate the integral
-        l2norm += np.dot(weig , (np.sin(2*np.pi * x) * np.sin(2*np.pi * y) - local_uh)**2) * det;
+        l2norm += np.dot(weig , (np.sin(2*np.pi * x) * np.sin(2*np.pi * y) - local_uh)**2) * areaPhys;
 
+    l2norm = np.sqrt(l2norm);
     return l2norm
 
 def eval_shape(xnod, ynod):
@@ -46,7 +48,7 @@ def eval_shape(xnod, ynod):
 def get_quad():
 
     # hard coded quadrature rule
-    w = np.array([1.0/6, 1.0/6, 1.0/6]);
+    w = np.array([1.0/3, 1.0/3, 1.0/3]);
     x = np.array([1.0/2, 1.0/2, 0.0]);
     y = np.array([1.0/2, 0.0, 1.0/2]);
 
