@@ -23,8 +23,13 @@ def main():
 
     # generate mesh
     mesh = Mesh(data)
-    mesh.refine()
-    mesh.plot()
+
+    for i in range(0,5):
+        problem = Problem(mesh, data)
+        uh = problem.solveLifting()
+        normL2 = l2Norm(mesh, uh);
+        print("L2 norm: ", normL2)
+        mesh.refine()
 
 
 if __name__ == "__main__":

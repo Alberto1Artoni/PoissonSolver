@@ -28,12 +28,20 @@ class Mesh:
 
     def generate_boundary_nodes(self):
         """ generates the boundary nodes """
+#       self.boundary_dofs = np.concatenate((\
+#                                np.arange(0, self.nx),                             \
+#                                np.arange(self.nx, self.nx*(self.ny-1) , self.nx), \
+#                                np.arange(2*self.nx-1, self.nx*(self.ny-1) , self.nx), \
+#                                np.arange(self.nx*(self.ny-1), self.nx*self.ny)))
+        # hard coding for the moment
+        self.boundary_dofs = np.zeros(2 * (self.nx + self.ny - 2), dtype=int)
+        k = 0;
+        for i in range(self.nx*self.ny):
+            if self.coord_x[i] == 0 or self.coord_x[i] == 1 or \
+               self.coord_y[i] == 0 or self.coord_y[i] == 1:
+                self.boundary_dofs[k] = i
+                k += 1
 
-        self.boundary_dofs = np.concatenate((\
-                                 np.arange(0, self.nx),                             \
-                                 np.arange(self.nx, self.nx*(self.ny-1) , self.nx), \
-                                 np.arange(2*self.nx-1, self.nx*(self.ny-1) , self.nx), \
-                                 np.arange(self.nx*(self.ny-1), self.nx*self.ny)))
 
 
     def generate_structured_elements(self):
@@ -96,24 +104,62 @@ class Mesh:
                     if je != ie:
                         for jv in range(3):
                             if self.elements[je,jv] == j:
-                                neig[ie,ineig] = je
-                                ineig += 1
+                                neig[ie,iv] = je
         
         isRefined = np.zeros(self.ne)
 
         #   3. Refine
+
+        # generates the refined skeleton
         new_nodes = [];     # empty list collecting the owners of the new nodes
         new_coords = [];    # empty list collecting the coordinates of the new nodes
+        new_own = [[] for _ in range(self.ne)]
+                                                # empty list collecting the owner of each 
+                                                # new node
+
+        shift = self.nx*self.ny
         for ie in range(self.ne):
             for iv in range(3):
                 if (neig[ie,iv] == -1): # check if it is a boundary edge
                     # refine
-                    print("Refining element ", ie)
                     new_nodes.append([ie, -1])
+                    i = self.elements[ie,  iv]
+                    j = self.elements[ie, (iv+1)%3]
+                    x = 0.5 * (self.coord_x[i] + self.coord_x[j])
+                    y = 0.5 * (self.coord_y[i] + self.coord_y[j])
+                    new_coords.append([x, y])
+                    new_own[ie].append([i,len(new_nodes)-1 + shift])
+                    new_own[ie].append([len(new_nodes)-1 + shift,j])
+
                 else:
                     if (isRefined[neig[ie,iv]] == 1):
-                        # do nothing
-                        print("do nothing")
+                        # push the edge 
+                        nie = neig[ie,iv]
+                        # need to get the proper edge
+                        # current edge on ie is iv, iv+1
+                        # I am looking for the edge on nie
+                        for kv in range(3):
+                            for jv in range(3):
+                                if (self.elements[nie, jv]      == self.elements[ie, kv]) and \
+                                   (self.elements[nie,(jv+1)%3] == self.elements[ie,(kv+1)%3]):
+                                   neig_jv = jv;
+                                   neig_kv = kv;
+                                   break
+                                if (self.elements[nie,(jv+1)%3] == self.elements[ie, kv]) and \
+                                   (self.elements[nie,(jv)]     == self.elements[ie,(kv+1)%3]):
+                                   neig_kv = kv;
+                                   neig_jv = jv;
+                                   break
+                        # adding these elements doesn't preseve the order
+                        # it needs to be checked:
+                        if (self.elements[ie,neig_kv] == new_own[nie][2*neig_jv][0]):
+                            new_own[ie].append(new_own[nie][2*neig_jv])
+                            new_own[ie].append(new_own[nie][2*neig_jv+1])
+
+                        if (self.elements[ie,neig_kv] == new_own[nie][2*neig_jv+1][1]):
+                            new_own[ie].append([new_own[nie][2*neig_jv+1][1], new_own[nie][2*neig_jv+1][0]])
+                            new_own[ie].append([new_own[nie][2*neig_jv][1], new_own[nie][2*neig_jv][0]])
+
                     else:
                         i = self.elements[ie,  iv]
                         j = self.elements[ie, (iv+1)%3]
@@ -121,13 +167,33 @@ class Mesh:
                         x = 0.5 * (self.coord_x[i] + self.coord_x[j])
                         y = 0.5 * (self.coord_y[i] + self.coord_y[j])
                         new_coords.append([x, y])
+                        new_own[ie].append([i,len(new_nodes)-1 + shift])
+                        new_own[ie].append([len(new_nodes)-1 + shift,j])
 
             isRefined[ie] = 1
 
-        print(new_nodes)
-        print(isRefined)
+        #   4. Update the mesh
+        new_elements = []
 
-        
+        for ie in range(self.ne):
+            for iv in range(1,len(new_own[ie]),2):
+               new_elements.append([new_own[ie][(iv  )%6][0], \
+                                    new_own[ie][(iv  )%6][1], \
+                                    new_own[ie][(iv+1)%6][1]])
+            new_elements.append([new_own[ie][0][1], new_own[ie][2][1], new_own[ie][4][1]])
+
+        self.elements = np.array(new_elements)
+        coord_x = np.concatenate((self.coord_x, [x[0] for x in new_coords]))
+        coord_y = np.concatenate((self.coord_y, [y[1] for y in new_coords]))
+        self.coord_x = coord_x
+        self.coord_y = coord_y
+        self.ne = len(self.elements)
+        self.nx = 2*self.nx - 1
+        self.ny = 2*self.ny - 1
+
+        # update boundary nodes
+        self.generate_boundary_nodes()
+
 
     def plot(self):
         """ Utility to plot the mesh """
