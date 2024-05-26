@@ -1,9 +1,7 @@
-2. VTK visualization?
-3. Implement lifting: this should help with CG? @@@ EXTRA POINTS!
-4. Review how the linear problem is solved.
-5. Add mesh refinement
-    - add mesh visualizer
-    - think to the algorithm: compare with the presentation
-  
+0. Review code design -> lifting updates the boundary condition AFTER. 
+1. Reread the algorithm to refine the mesh.
+   Check for some vectorized optimization.
+   Reorder the algorithm to explain what you are doing
+2. Add comments
+3. Examples have to be moved to yupiter notebooks.
 
-Final: improve comments
