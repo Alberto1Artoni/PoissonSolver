@@ -56,7 +56,7 @@ pip install -e .
   To run the example, run the following command:
   ```
   cd ./examples/02-Convergence
-  python3 Convergence.py
+  python3 ConvergenceStudy.py
   ```
 
 ## Documentation
