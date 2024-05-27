@@ -29,12 +29,13 @@ pip install -e .
   ### 00-Solver
   The solver is validated on a simple problem with known solution.
   The considered domain is \(\Omega = [0,3]\times[0,2]\) and the following manufactured solution $u(x,y) = \sin(\pi x) \cos(\pi y)$ was taken. 
+  For this case, we present both the case where we impose strong Dirichlet boundary conditions and the case where we impose the Dirichlet boundary conditions with the lift operator.
 
   ### 01-Refinement
-  This example shows the refinement of the mesh.
+  This example shows the refinement of the mesh. The implementation has been tested only on structured grids.
 
   ### 02-Convergence
-  This example shows the convergence of the error with respect to the mesh size.
+  This example shows the convergence of the error with respect to the mesh size, numerically veryfing the theoretical convergence rate of the FEM method.
 
 ## Documentation
 To generate the documentation, run the following commands:
@@ -43,4 +44,3 @@ cd doc
 sphinx-apidoc -o ./source ../PoissonSolver
 ```
 
-## Notes to the reader
