@@ -64,5 +64,6 @@ To generate the documentation, run the following commands:
 ```
 cd doc
 sphinx-apidoc -o ./source ../PoissonSolver
+make html
 ```
 

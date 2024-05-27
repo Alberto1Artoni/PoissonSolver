@@ -3,6 +3,7 @@ import numpy as np
 import json
 import matplotlib.pyplot as plt
 
+
 def main():
     filePath = "data.json"
     with open(filePath, 'r') as file:
