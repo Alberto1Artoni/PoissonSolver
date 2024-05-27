@@ -16,6 +16,11 @@ Clone the repository with the following:
 ```bash
 ```
 
+install the repo with:
+```
+pip install -e .
+```
+
 ## Validation
   ### Comparison with manufactured solution
   The numerical solution is compared to the analytical solution for the following test cases:

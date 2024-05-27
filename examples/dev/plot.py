@@ -1,18 +1,7 @@
-import sys
-sys.path.append('../../')
-
-from src.mesh    import Mesh
-from src.problem import Problem
-from src.utils   import l2Norm
-
-import json
-from sympy import symbols, sin, cos, pi
-from sympy.utilities.lambdify import lambdify
-
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from PoissonSolver import mesh, problem, utils
 
 import numpy as np
+import json
 
 
 def main():
@@ -22,14 +11,21 @@ def main():
         data = json.load(file)
 
     # generate mesh
-    mesh = Mesh(data)
+    grid = mesh.Mesh(data)
+
+    f = utils.parseFunction(data['source'])
+    g = utils.parseFunction(data['exact'])
 
     for i in range(0,5):
-        problem = Problem(mesh, data)
-        uh = problem.solveLifting()
-        normL2 = l2Norm(mesh, uh);
+        pb = problem.Problem(grid, data)
+        pb.stiff(grid)
+        pb.source(grid, f)
+        pb.lifting(grid, g)
+        uh = pb.solveLifting()
+
+        normL2 = utils.l2Norm(grid, uh);
         print("L2 norm: ", normL2)
-        mesh.refine()
+        grid.refine()
 
 
 if __name__ == "__main__":
