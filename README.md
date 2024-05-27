@@ -67,3 +67,6 @@ sphinx-apidoc -o ./source ../PoissonSolver
 make html
 ```
 
+## Notes to the reader
+The cases have been interfaced with a data.json file. This allows to easily change the parameters of the problems.
+Fell free to change the parameters and to test the implementation.
