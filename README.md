@@ -1,25 +1,29 @@
 # Poisson FEM Solver
 
+This repository contains a Finite Element solver for the Poisson equation on structured triangular meshes.
+
 ## Table of Contents
 
-- [Introduction](#introduction)
-- [How to run the code](#how-to-run-the-code)
+- [Installation](#installation)
 - [Validation](#validation)
 - [Notes to the reader](#notes-to-the-reader)
-
-## Introduction
-  This repo contains a Finite Element solver for the Poisson equation with homogeneous data.
 
 ## How to run the code
 
 Clone the repository with the following:
-```bash
+
+```
+git clone git@github.com:Alberto1Artoni/PoissonSolver.git
 ```
 
 install the repo with:
 ```
 pip install -e .
 ```
+
+## Documentation
+
+
 
 ## Validation
   ### Comparison with manufactured solution
