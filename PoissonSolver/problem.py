@@ -101,6 +101,7 @@ class Problem:
         # returns the stiff matrix
         self.K = sp.coo_matrix((val, (coo_i, coo_j)),
                                shape=(self.ndof, self.ndof))
+        self.K.sum_duplicates()
 
     def source(self, mesh, f):
         """ Assemble the source vector.
@@ -171,13 +172,14 @@ class Problem:
         # enforce Dirichlet boundary conditions on nodes
         mask = np.isin(row, mesh.boundary_dofs)
         indices = np.where(mask)
-        data[indices] = np.where(col[indices] == row[indices], 1.0, 0.0)
+        data[indices] = np.where(row[indices] == col[indices], 1.0, 0.0)
 
-        self.K = sp.coo_matrix((data, (row, col)),
+
+        K = sp.coo_matrix((data, (row, col)),
                                shape=(self.ndof, self.ndof))
 
         # convert to csr format for faster algebra
-        self.K = self.K.tocsr()
+        self.K = K.tocsr()
 
     def solve(self):
         """ Solve the algebraic problem

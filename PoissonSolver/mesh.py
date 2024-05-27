@@ -368,5 +368,8 @@ class Mesh:
             The mesh size is computed as the distance between the mid point of
             the hypotenuse and the vertex sqaured corner of the triangle.
         """
-        return np.sqrt(2)/2.0 * max(self.coord_x[1] - self.coord_x[0],
-                                    self.coord_y[self.nx] - self.coord_y[0])
+        return np.sqrt(2)/2.0 * max(self.coord_x[self.elements[0][2]] - 
+                                    self.coord_x[self.elements[0][0]],
+                                    self.coord_y[self.elements[0][1]] - 
+                                    self.coord_y[self.elements[0][0]])
+
