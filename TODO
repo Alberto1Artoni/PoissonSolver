@@ -1,7 +1,0 @@
-0. Review code design -> lifting updates the boundary condition AFTER. 
-1. Reread the algorithm to refine the mesh.
-   Check for some vectorized optimization.
-   Reorder the algorithm to explain what you are doing
-2. Add comments
-3. Examples have to be moved to yupiter notebooks.
-
