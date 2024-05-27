@@ -24,7 +24,7 @@ def main():
     # assemble source term
     pb.source(grid, f)
 
-    # impose dirichlet bc with lifting
+    # impose Dirichlet bc in a strong manner
     pb.dirichlet(grid, g)
 
     # solve the algebric problem
